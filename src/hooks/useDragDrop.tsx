@@ -28,7 +28,7 @@ const useDragDrop = (
   const [isDraggableOverllapping, setOverlap] = useState(false)
 
 
-  const handleDrag = useCallback((event: TouchEvent | MouseEvent) => {
+  const handleTranslateElement = useCallback((event: TouchEvent | MouseEvent) => {
     if (!draggableRef.current) {
       console.warn("Could not find an element draggable ref")
       return
@@ -65,7 +65,7 @@ const useDragDrop = (
     return setIsTouching(isTouchEvent(event))
   }
 
-  const handleMouseDown = useCallback((event: MouseEvent | TouchEvent) => {
+  const handleDragStart = useCallback((event: MouseEvent | TouchEvent) => {
     handleCheckTouch(event)
 
     setIsDragging(true)
@@ -73,7 +73,7 @@ const useDragDrop = (
     onDragStart(event)
   }, [onDragStart])
 
-  const handleMouseUp = useCallback((event: MouseEvent | TouchEvent) => {
+  const handleDrop = useCallback((event: MouseEvent | TouchEvent) => {
     setIsTouching(false)
     setIsDragging(false)
 
@@ -82,41 +82,42 @@ const useDragDrop = (
     onDrop(event)
   }, [onDrop, onDragEnd])
 
-  const handleMouseMove = useCallback((event: MouseEvent | TouchEvent) => {
+  const handleDragMove = useCallback((event: MouseEvent | TouchEvent) => {
     if (isDragging) {
       event.preventDefault()
       event.stopPropagation()
 
-      handleDrag(event)
+      handleTranslateElement(event)
       onDrag(event)
     }
-  }, [handleDrag, isDragging, onDrag])
+
+  }, [handleTranslateElement, isDragging, onDrag])
 
 
   useEffect(() => {
     const element = draggableRef.current
     if (element) {
-      element.addEventListener("mousedown", handleMouseDown)
-      element.addEventListener("mouseup", handleMouseUp)
-      element.addEventListener("mousemove", handleMouseMove)
+      element.addEventListener("mousedown", handleDragStart)
+      element.addEventListener("mouseup", handleDrop)
+      element.addEventListener("mousemove", handleDragMove)
       // Touch events
-      element.addEventListener("touchmove", handleMouseMove, { passive: false })
-      element.addEventListener("touchend", handleMouseUp)
-      element.addEventListener("touchstart", handleMouseDown)
+      element.addEventListener("touchmove", handleDragMove, { passive: false })
+      element.addEventListener("touchend", handleDrop)
+      element.addEventListener("touchstart", handleDragStart)
 
       return () => {
-        element.removeEventListener("mousedown", handleMouseDown)
-        element.removeEventListener("mouseup", handleMouseUp)
-        element.removeEventListener("mousemove", handleMouseMove)
+        element.removeEventListener("mousedown", handleDragStart)
+        element.removeEventListener("mouseup", handleDrop)
+        element.removeEventListener("mousemove", handleDragMove)
         // Drag events
-        element.removeEventListener("touchmove", handleMouseMove)
-        element.removeEventListener("touchend", handleMouseUp)
-        element.removeEventListener("touchstart", handleMouseDown)
+        element.removeEventListener("touchmove", handleDragMove)
+        element.removeEventListener("touchend", handleDrop)
+        element.removeEventListener("touchstart", handleDragStart)
       }
     }
 
     return () => { }
-  }, [handleMouseDown, handleMouseMove, handleMouseUp, isDragging, draggableRef])
+  }, [handleDragStart, handleDragMove, handleDrop, isDragging, draggableRef])
 
   return {
     isDragging,
